@@ -9,7 +9,7 @@ public class Main {
 
 	public static void main(String[] args) throws IOException, EchoNestException, MusixMatchException, InterruptedException {
 		//REAL,
-		for(int i=1998; i<2015; i++){
+		for(int i=2014; i<2015; i++){
 			int x = 53;
 			if(i==2014){
 				x=35;

@@ -54,7 +54,7 @@ public class MongoDB {
 		charts.insert(dbObject);
 	}
 	public boolean findSong(String artist, String title){
-boolean hit = true;
+		boolean hit = true;
 
 		BasicDBObject whereQuery = new BasicDBObject();
 		whereQuery.put("artist", artist);
@@ -64,7 +64,36 @@ boolean hit = true;
 			hit = false;
 			System.out.println(artist + " " + title + " finnes ikke");
 		}
-		
+
+		return hit;
+	}
+	public DBObject getSongInfo(String artist, String title){
+		DBObject hit = null;
+		BasicDBObject fields = new BasicDBObject();
+		fields.put("soundSummary", 1);
+		BasicDBObject whereQuery = new BasicDBObject();
+		whereQuery.put("artist", artist);
+		whereQuery.put("title", title);
+		DBObject cursor = songs.findOne(whereQuery, fields);
+		if(cursor!=null){
+			hit = cursor;
+			System.out.println(artist + " " + title + " finnes");
+		}
+
+		return hit;
+	}
+	public boolean findChart(String year, String week){
+		boolean hit = true;
+
+		BasicDBObject whereQuery = new BasicDBObject();
+		whereQuery.put("year", year);
+		whereQuery.put("week", week);
+		DBObject cursor = charts.findOne(whereQuery);
+		if(cursor==null){
+			hit = false;
+			System.out.println(year + " " + week + " finnes ikke");
+		}
+
 		return hit;
 	}
 	public static MongoDB getInstance(){
