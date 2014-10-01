@@ -1,0 +1,1 @@
+Project where I will be crawling VG-Lista topp 20 and extract the charts and the songs. Further I will obtain more information for each song, from the EchoNest and MusixMatch API. This data is lyrical and musical technical.
