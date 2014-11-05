@@ -102,6 +102,7 @@ public class CrawlerVG {
 					}
 					else{
 						//Crawler VG-Lista for den aktuelle sangen i listen
+						System.out.println("http://lista.vg.no/"+link);
 						Document doc2 = Jsoup.connect("http://lista.vg.no/"+link).timeout(10*1000).get(); 
 						//Velger elementet bio, som holder på informasjon om sangen og artisten
 						Element bioElement = doc2.select("div.bio").first();

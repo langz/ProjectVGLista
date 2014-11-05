@@ -22,30 +22,31 @@ public class Main {
 
 	public static void main(String[] args) throws IOException, EchoNestException, MusixMatchException, InterruptedException {
 		//REAL,
-				for(int i=1960; i<2015; i++){
-					int x = 53;
-					if(i==2014){
-						x=35;
-					}
-					else{
-		
-					}
-					for(int v=1; v<=x ;v++){
-						if((i==1975 && v==1) || (i==1985 && v==1) || (i==1986 && v==1) || (i==1987 && v==1)){
-		
-						}
-						else{
-							Thread.sleep(1000);
-							String url = "http://lista.vg.no/liste/topp-20-single/1/dato/"+ i +"/uke/" + v;
-							CrawlerVG crawler = CrawlerVG.getInstance();
-							System.out.println("Prøver å gå til: " + url);
-							crawler.getList(url);
-						}
-					}
-				}
+		//				for(int i=1996; i<2015; i++){
+		//					int x = 53;
+		//					if(i==2014){
+		//						x=35;
+		//					}
+		//					else{
+		//		
+		//					}
+		//					for(int v=1; v<=x ;v++){
+		//						if((i==1975 && v==1) || (i==1985 && v==1) || (i==1986 && v==1) || (i==1987 && v==1)){
+		//		
+		//						}
+		//						else{
+		//							Thread.sleep(1000);
+		//							String url = "http://lista.vg.no/liste/topp-20-single/1/dato/"+ i +"/uke/" + v;
+		//							CrawlerVG crawler = CrawlerVG.getInstance();
+		//							System.out.println("Prøver å gå til: " + url);
+		//							crawler.getList(url);
+		//						}
+		//					}
+		//				}
 
-
-
+		MongoDB mb = MongoDB.getInstance();
+		mb.funkerDette();
+mb.generateDecades();
 
 
 		//		
