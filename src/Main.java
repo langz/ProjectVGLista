@@ -45,8 +45,9 @@ public class Main {
 		//				}
 
 		MongoDB mb = MongoDB.getInstance();
-		mb.funkerDette();
-mb.generateDecades();
+//		mb.funkerDette();
+//mb.generateDecades();
+mb.generateTotal();
 
 
 		//		

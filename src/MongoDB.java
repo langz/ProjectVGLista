@@ -26,6 +26,7 @@ public class MongoDB {
 	public DBCollection songs;
 	public DBCollection summaryYear;
 	public DBCollection summaryDecade;
+	public DBCollection summary;
 	public MongoDB(){
 		try {
 			mongo = new Mongo("localhost", 27017);
@@ -39,6 +40,7 @@ public class MongoDB {
 		songs = db.getCollection("songs");
 		summaryYear = db.getCollection("summaryYear");
 		summaryDecade = db.getCollection("summaryDecade");
+		summary = db.getCollection("summary");
 	}
 
 	public void funkerDette(){
@@ -110,7 +112,7 @@ public class MongoDB {
 						DBObject keyObj = (DBObject) keySummary.get(iter);
 						int verdi = Integer.parseInt(keyObj.get(iter+"").toString());
 						keys[iter]+=verdi;
-						
+
 					}
 				}
 			}
@@ -152,7 +154,7 @@ public class MongoDB {
 			document.put("lyricSummary", lyricSummaryObj);
 			document.put("key", keyArrayObj);
 			System.out.println(document);
-		summaryYear.insert(document);
+			summaryYear.insert(document);
 
 
 		}
@@ -207,13 +209,13 @@ public class MongoDB {
 					}
 
 				}
-				
+
 				BasicDBList keySummary = (BasicDBList) chart.get("key");
 				for(int iter = 0 ; iter < keySummary.size() ; iter++ ){
 					DBObject keyObj = (DBObject) keySummary.get(iter);
 					int verdi = Integer.parseInt(keyObj.get(iter+"").toString());
 					keys[iter]+=verdi;
-					
+
 				}
 
 				years++;
@@ -246,7 +248,7 @@ public class MongoDB {
 				lyricSummaryArray.add(tempArray);
 
 			}
-			
+
 			for(int iter = 0; iter < keys.length; iter++){
 				int value = keys[iter];
 				JSONObject tempKey = new JSONObject();
@@ -258,9 +260,114 @@ public class MongoDB {
 			document.put("lyricSummary", dbObject);
 			document.put("key", keyArrayObj);
 			System.out.println(document);
-					summaryDecade.insert(document);
+			summaryDecade.insert(document);
 
 		}
+	}
+	public void generateTotal(){
+
+		HashMap<String, Long> lyricSummaryMap = new HashMap<String, Long>();
+		JSONArray lyricSummaryArray = new JSONArray();
+		JSONArray jsonKeyArray = new JSONArray();
+		int[] keys = new int[12];
+		double danceability =  0.0f;
+		double duration =  0.0f;
+		double energy =  0.0f;
+		double loudness =  0.0f;
+		double mode = 0;
+		double tempo =  0.0f;
+		int decades = 0;
+		int songs = 0;
+		int antallaar = 0;
+		int charts = 0;
+
+
+		DBCursor cursor = summaryDecade.find();
+		while(cursor.hasNext()) {
+
+			DBObject dec = cursor.next();
+
+			decades++;
+			danceability += Double.parseDouble(dec.get("danceability").toString());
+			duration +=Double.parseDouble(dec.get("duration").toString());
+			energy +=Double.parseDouble(dec.get("energy").toString());
+			loudness +=Double.parseDouble(dec.get("loudness").toString());
+			mode +=Double.parseDouble(dec.get("mode").toString());
+			tempo +=Double.parseDouble(dec.get("tempo").toString());
+			songs +=Integer.parseInt(dec.get("songs").toString());
+			antallaar +=Integer.parseInt(dec.get("antallaar").toString());
+			charts +=Integer.parseInt(dec.get("charts").toString());
+			BasicDBList lyricSummary = (BasicDBList) dec.get("lyricSummary");
+
+			for(int iter = 0 ; iter < lyricSummary.size() ; iter++ ){
+
+				BasicDBList tempLyric = (BasicDBList) lyricSummary.get(iter);
+				String ord = tempLyric.get(0).toString();
+				long verdi = Long.parseLong(tempLyric.get(1).toString());
+
+				//Hvis ordet finnes i ordene i listen, så legges den nye verdien til den eksisterende verdien
+				if(lyricSummaryMap.containsKey(ord)){
+					lyricSummaryMap.put(ord, (lyricSummaryMap.get(ord) + verdi));
+				}
+				//Hvis ikke ordet finnes, så legges til ordet og dens verdi
+				else{
+					lyricSummaryMap.put(ord,verdi);
+				}
+
+			}
+
+			BasicDBList keySummary = (BasicDBList) dec.get("key");
+			for(int iter = 0 ; iter < keySummary.size() ; iter++ ){
+				DBObject keyObj = (DBObject) keySummary.get(iter);
+				int verdi = Integer.parseInt(keyObj.get(iter+"").toString());
+				keys[iter]+=verdi;
+
+			}
+
+
+		}
+		danceability = danceability/decades;
+		duration =  duration/decades;
+		energy =  energy/decades;
+		loudness =  loudness/decades;
+		mode = mode/decades;
+		tempo =  tempo/decades;
+		BasicDBObject document = new BasicDBObject();
+		document.put("songs",songs);
+		document.put("charts",charts);
+		document.put("antallaar", antallaar);
+		document.put("danceability", danceability);
+		document.put("duration", duration);
+		document.put("energy", energy);
+		document.put("loudness", loudness);
+		document.put("mode", mode);
+		document.put("tempo", tempo);
+
+		for (Map.Entry<String, Long> entry : lyricSummaryMap.entrySet()) {
+			String ord = entry.getKey();
+			Long value = entry.getValue();
+			JSONArray tempArray = new JSONArray();
+
+			tempArray.add(ord);
+			tempArray.add(value);
+			lyricSummaryArray.add(tempArray);
+
+		}
+
+		for(int iter = 0; iter < keys.length; iter++){
+			int value = keys[iter];
+			JSONObject tempKey = new JSONObject();
+			tempKey.put(iter, value);
+			jsonKeyArray.add(tempKey);
+		}
+		DBObject keyArrayObj = (DBObject) JSON.parse(jsonKeyArray.toJSONString());
+		DBObject dbObject = (DBObject) JSON.parse(lyricSummaryArray.toJSONString());
+		document.put("lyricSummary", dbObject);
+		document.put("key", keyArrayObj);
+		System.out.println(document);
+		summary.insert(document);
+
+
 	}
 
 	public void insertSong(String json){
