@@ -1,5 +1,6 @@
 import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import com.echonest.api.v4.EchoNestException;
@@ -24,6 +25,7 @@ public class MongoDB {
 	public DB db;
 	public DBCollection charts;
 	public DBCollection songs;
+	public DBCollection summaryArtist;
 	public DBCollection summaryYear;
 	public DBCollection summaryDecade;
 	public DBCollection summary;
@@ -38,8 +40,9 @@ public class MongoDB {
 
 		charts = db.getCollection("charts");
 		songs = db.getCollection("songs");
-		summaryYear = db.getCollection("summaryYear");
+		summaryArtist = db.getCollection("summaryArtist");
 		summaryDecade = db.getCollection("summaryDecade");
+		summaryYear = db.getCollection("summaryYear");
 		summary = db.getCollection("summary");
 	}
 
@@ -65,29 +68,32 @@ public class MongoDB {
 				int tempint = Integer.parseInt(temp.get("year").toString());
 				if(tempint==i){
 
+
 					BasicDBList dbc = (BasicDBList) temp.get("soundSummary");
-					BasicDBObject danceabilityObj =  (BasicDBObject) dbc.get(0);
-					danceability += Double.parseDouble(danceabilityObj.get("danceability").toString());
 
-					BasicDBObject durationObj =  (BasicDBObject) dbc.get(1);
-					duration += Double.parseDouble(durationObj.get("duration").toString());
+					if(dbc.size()!=0){
+						BasicDBObject danceabilityObj =  (BasicDBObject) dbc.get(0);
+						danceability += Double.parseDouble(danceabilityObj.get("danceability").toString());
 
-					BasicDBObject energyObj =  (BasicDBObject) dbc.get(2);
-					energy += Double.parseDouble(energyObj.get("energy").toString());
+						BasicDBObject durationObj =  (BasicDBObject) dbc.get(1);
+						duration += Double.parseDouble(durationObj.get("duration").toString());
 
-					BasicDBObject loudnessObj =  (BasicDBObject) dbc.get(3);
-					loudness += Double.parseDouble(loudnessObj.get("loudness").toString());
+						BasicDBObject energyObj =  (BasicDBObject) dbc.get(2);
+						energy += Double.parseDouble(energyObj.get("energy").toString());
 
-					BasicDBObject modeObj =  (BasicDBObject) dbc.get(4);
-					mode += Double.parseDouble(modeObj.get("mode").toString());
+						BasicDBObject loudnessObj =  (BasicDBObject) dbc.get(3);
+						loudness += Double.parseDouble(loudnessObj.get("loudness").toString());
 
-					BasicDBObject tempoObj =  (BasicDBObject) dbc.get(5);
-					tempo += Double.parseDouble(tempoObj.get("tempo").toString());
+						BasicDBObject modeObj =  (BasicDBObject) dbc.get(4);
+						mode += Double.parseDouble(modeObj.get("mode").toString());
 
-					BasicDBList songsList = (BasicDBList) temp.get("list");
-					songs+=songsList.size();
-					antallLister++;
+						BasicDBObject tempoObj =  (BasicDBObject) dbc.get(5);
+						tempo += Double.parseDouble(tempoObj.get("tempo").toString());
 
+						BasicDBList songsList = (BasicDBList) temp.get("list");
+						songs+=songsList.size();
+						antallLister++;
+					}
 					BasicDBList lyricSummary = (BasicDBList) temp.get("lyricSummary");
 
 					for(int iter = 0 ; iter < lyricSummary.size() ; iter++ ){
@@ -437,6 +443,194 @@ public class MongoDB {
 
 		return hit;
 	}
+
+	public void generateArtistData(){
+		HashSet<String> artister = new HashSet<>();
+		int i=0;
+		DBCursor cursorDoc = songs.find();
+		while (cursorDoc.hasNext()) {
+			i++;
+			String artistnavn = (String) cursorDoc.next().get("artist");
+			artister.add(artistnavn);
+			System.out.println( artistnavn +" " +i +"/" +cursorDoc.size());
+			
+		}
+int teller = 0;
+		for(String artistnavnet : artister){
+			teller ++;
+			System.out.println( artistnavnet +" " +teller +"/" +artister.size());
+			HashMap<String, Long> lyricSummaryMap = new HashMap<String, Long>();
+			JSONArray lyricSummaryArray = new JSONArray();
+			JSONArray jsonKeyArray = new JSONArray();
+			int[] keys = new int[12];
+
+			double danceability =  0.0f;
+			double duration =  0.0f;
+			double energy =  0.0f;
+			double loudness =  0.0f;
+			double mode = 0;
+			double tempo =  0.0f;
+			double timesignature = 0;
+
+			BasicDBObject whereQuery = new BasicDBObject();
+			whereQuery.put("artist", artistnavnet);
+			DBCursor songsDoc = songs.find(whereQuery);
+			HashSet<String> unikeSanger = new HashSet<>();
+
+			BasicDBObject artistObject = new BasicDBObject();
+			artistObject.put("artist", artistnavnet);
+			BasicDBList artistsanger = new BasicDBList();
+			int antall =0;
+
+
+			while (songsDoc.hasNext()) {
+				DBObject sang = songsDoc.next();
+				String tittelen = (String) sang.get("title");
+				if(unikeSanger.add(tittelen)){
+
+					BasicDBObject whereQ = new BasicDBObject();
+					whereQ.put("artist", artistnavnet);
+					whereQ.put("title", tittelen);
+					DBCursor numberofSongs = songs.find(whereQuery);
+					int antallganger = numberofSongs.size();
+					antall+= antallganger;
+					sang.put("antall", antallganger);
+					artistsanger.add(sang);
+				}
+			}
+			artistObject.put("antall", antall);
+
+			int sangerMedSoundSummary = 0;
+
+			for(int sangid = 0; sangid<artistsanger.size(); sangid++){
+
+				BasicDBObject sangObj = (BasicDBObject) artistsanger.get(sangid);
+				BasicDBList dbc = (BasicDBList) sangObj.get("soundSummary");
+
+				if(dbc.size()!=0){
+					sangerMedSoundSummary+=1;
+
+
+					BasicDBObject danceabilityObj =  (BasicDBObject) dbc.get(0);
+					danceability += Double.parseDouble(danceabilityObj.get("danceability").toString());
+
+					BasicDBObject durationObj =  (BasicDBObject) dbc.get(1);
+					duration += Double.parseDouble(durationObj.get("duration").toString());
+
+					BasicDBObject energyObj =  (BasicDBObject) dbc.get(2);
+					energy += Double.parseDouble(energyObj.get("energy").toString());
+
+					BasicDBObject loudnessObj =  (BasicDBObject) dbc.get(4);
+					loudness += Double.parseDouble(loudnessObj.get("loudness").toString());
+
+					BasicDBObject modeObj =  (BasicDBObject) dbc.get(5);
+					mode += Double.parseDouble(modeObj.get("mode").toString());
+
+					BasicDBObject tempoObj =  (BasicDBObject) dbc.get(6);
+					tempo += Double.parseDouble(tempoObj.get("tempo").toString());
+
+					BasicDBObject singObj =  (BasicDBObject) dbc.get(7);
+					timesignature += Double.parseDouble(singObj.get("timesignature").toString());
+
+					BasicDBObject keyObj =  (BasicDBObject) dbc.get(3);
+					int keyvalue = Integer.parseInt(keyObj.get("key").toString());
+					keys[keyvalue]++;
+
+
+
+
+				}
+
+				BasicDBList dbl = (BasicDBList) sangObj.get("bow");
+				if(dbl.size()!=0){
+
+					for(int iter = 0 ; iter < dbl.size() ; iter++ ){
+
+						BasicDBList tempLyric = (BasicDBList) dbl.get(iter);
+						String ord = tempLyric.get(0).toString();
+						long verdi = Long.parseLong(tempLyric.get(1).toString());
+
+						//Hvis ordet finnes i ordene i listen, så legges den nye verdien til den eksisterende verdien
+						if(lyricSummaryMap.containsKey(ord)){
+							lyricSummaryMap.put(ord, (lyricSummaryMap.get(ord) + verdi));
+						}
+						//Hvis ikke ordet finnes, så legges til ordet og dens verdi
+						else{
+							lyricSummaryMap.put(ord,verdi);
+						}
+
+					}
+
+				}
+
+			}
+if(danceability != 0){
+	
+}
+danceability = danceability/sangerMedSoundSummary;
+if(duration != 0){
+	duration =  duration/sangerMedSoundSummary;
+	
+}
+if(energy != 0){
+	
+	energy =  energy/sangerMedSoundSummary;
+}
+if(loudness != 0){
+	loudness =  loudness/sangerMedSoundSummary;
+	
+}
+if(mode != 0){
+	
+	mode = mode/sangerMedSoundSummary;
+}
+if(tempo != 0){
+	
+	tempo =  tempo/sangerMedSoundSummary;
+}
+if(timesignature != 0){
+	
+	timesignature =  timesignature/sangerMedSoundSummary;
+}
+
+			for (Map.Entry<String, Long> entry : lyricSummaryMap.entrySet()) {
+				String ord = entry.getKey();
+				Long value = entry.getValue();
+				JSONArray tempArray = new JSONArray();
+
+				tempArray.add(ord);
+				tempArray.add(value);
+				lyricSummaryArray.add(tempArray);
+
+			}
+			for(int iter = 0; iter < keys.length; iter++){
+				int value = keys[iter];
+				JSONObject tempKey = new JSONObject();
+				tempKey.put(iter, value);
+				jsonKeyArray.add(tempKey);
+			}
+			DBObject dbObject = (DBObject) JSON.parse(lyricSummaryArray.toJSONString());
+			DBObject keyArrayObj = (DBObject) JSON.parse(jsonKeyArray.toJSONString());
+			artistObject.put("danceability", danceability);
+			artistObject.put("duration", duration);
+			artistObject.put("energy", energy);
+			artistObject.put("key", keyArrayObj);
+			artistObject.put("loudness", loudness);
+			artistObject.put("mode", mode);
+			artistObject.put("tempo", tempo);
+			artistObject.put("timesignature", timesignature);
+			artistObject.put("bow", dbObject);
+			artistObject.put("sanger",artistsanger );
+
+			summaryArtist.insert(artistObject);
+
+		}
+
+
+
+
+	}
+
 	public static MongoDB getInstance(){
 		if (mongodb == null){
 			mongodb = new MongoDB();
