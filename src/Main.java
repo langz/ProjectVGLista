@@ -48,7 +48,9 @@ public class Main {
 //		mb.funkerDette();
 //mb.generateDecades();
 //mb.generateTotal();
-		mb.generateArtistData();
+//		mb.generateArtistData();
+		mb.generateTop10ArtistAntallListet();
+		mb.generateTop10ArtistAntallUnike();
 
 
 		//		

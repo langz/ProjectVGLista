@@ -26,6 +26,8 @@ public class MongoDB {
 	public DBCollection charts;
 	public DBCollection songs;
 	public DBCollection summaryArtist;
+	public DBCollection summaryArtistTopUnik;
+	public DBCollection summaryArtistTopAntall;
 	public DBCollection summaryYear;
 	public DBCollection summaryDecade;
 	public DBCollection summary;
@@ -41,6 +43,8 @@ public class MongoDB {
 		charts = db.getCollection("charts");
 		songs = db.getCollection("songs");
 		summaryArtist = db.getCollection("summaryArtist");
+		summaryArtistTopUnik = db.getCollection("summaryArtistTopUnik");
+		summaryArtistTopAntall = db.getCollection("summaryArtistTopAntall");
 		summaryDecade = db.getCollection("summaryDecade");
 		summaryYear = db.getCollection("summaryYear");
 		summary = db.getCollection("summary");
@@ -444,6 +448,40 @@ public class MongoDB {
 		return hit;
 	}
 
+	public void generateTop10ArtistAntallListet(){
+
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("antall", -1);
+
+		DBCursor cursor = summaryArtist.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<10) {
+			DBObject obj = cursor.next();
+			summaryArtistTopAntall.insert(obj);
+			System.out.println(obj);
+			i++;	
+		}
+
+
+
+	}
+	public void generateTop10ArtistAntallUnike(){
+
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("antallunikesanger", -1);
+		DBCursor cursor = summaryArtist.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<10) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summaryArtistTopUnik.insert(obj);
+			i++;	
+		}
+
+
+
+	}
+
 	public void generateArtistData(){
 		HashSet<String> artister = new HashSet<>();
 		int i=0;
@@ -453,9 +491,9 @@ public class MongoDB {
 			String artistnavn = (String) cursorDoc.next().get("artist");
 			artister.add(artistnavn);
 			System.out.println( artistnavn +" " +i +"/" +cursorDoc.size());
-			
+
 		}
-int teller = 0;
+		int teller = 0;
 		for(String artistnavnet : artister){
 			teller ++;
 			System.out.println( artistnavnet +" " +teller +"/" +artister.size());
@@ -564,34 +602,34 @@ int teller = 0;
 				}
 
 			}
-if(danceability != 0){
-	
-}
-danceability = danceability/sangerMedSoundSummary;
-if(duration != 0){
-	duration =  duration/sangerMedSoundSummary;
-	
-}
-if(energy != 0){
-	
-	energy =  energy/sangerMedSoundSummary;
-}
-if(loudness != 0){
-	loudness =  loudness/sangerMedSoundSummary;
-	
-}
-if(mode != 0){
-	
-	mode = mode/sangerMedSoundSummary;
-}
-if(tempo != 0){
-	
-	tempo =  tempo/sangerMedSoundSummary;
-}
-if(timesignature != 0){
-	
-	timesignature =  timesignature/sangerMedSoundSummary;
-}
+			if(danceability != 0){
+
+				danceability = danceability/sangerMedSoundSummary;
+			}
+			if(duration != 0){
+				duration =  duration/sangerMedSoundSummary;
+
+			}
+			if(energy != 0){
+
+				energy =  energy/sangerMedSoundSummary;
+			}
+			if(loudness != 0){
+				loudness =  loudness/sangerMedSoundSummary;
+
+			}
+			if(mode != 0){
+
+				mode = mode/sangerMedSoundSummary;
+			}
+			if(tempo != 0){
+
+				tempo =  tempo/sangerMedSoundSummary;
+			}
+			if(timesignature != 0){
+
+				timesignature =  timesignature/sangerMedSoundSummary;
+			}
 
 			for (Map.Entry<String, Long> entry : lyricSummaryMap.entrySet()) {
 				String ord = entry.getKey();
@@ -609,6 +647,7 @@ if(timesignature != 0){
 				tempKey.put(iter, value);
 				jsonKeyArray.add(tempKey);
 			}
+			artistObject.put("antallunikesanger", artistsanger.size());
 			DBObject dbObject = (DBObject) JSON.parse(lyricSummaryArray.toJSONString());
 			DBObject keyArrayObj = (DBObject) JSON.parse(jsonKeyArray.toJSONString());
 			artistObject.put("danceability", danceability);
@@ -621,6 +660,7 @@ if(timesignature != 0){
 			artistObject.put("timesignature", timesignature);
 			artistObject.put("bow", dbObject);
 			artistObject.put("sanger",artistsanger );
+
 
 			summaryArtist.insert(artistObject);
 
