@@ -45,13 +45,65 @@ public class Main {
 		//				}
 
 		MongoDB mb = MongoDB.getInstance();
-//		mb.funkerDette();
-//mb.generateDecades();
-//mb.generateTotal();
-//		mb.generateArtistData();
-		mb.generateTop10ArtistAntallListet();
-		mb.generateTop10ArtistAntallUnike();
+		
+//		mb.updateCharts();
+//		mb.updateChartsYear();
+//		mb.generateDecades();
+	
 
+
+			mb.generateSongAntallBestPlass();
+		//		mb.stopWordForSummaryArtist();
+		//		mb.funkerDette();
+		//mb.generateDecades();
+		////mb.generateTotal();
+		//		mb.generateTop10ArtistAntallListet();
+		//	mb.generateTop10ArtistAntallUnike();
+
+		//		mb.generateSongAntallBestPlass();
+		//		mb.generateArtistData();
+		//	mb.generateTop10ArtistDanceability();
+		//		mb.generateTop10SongsDanceability();
+
+		//		mb.generateTop10ArtistLoudness();
+		//	mb.generateTop10SongsLoudness();
+
+
+		//mb.generateSongAntallBestPlass();
+
+		//System.out.println("1");
+		//System.out.println("2");
+		//mb.generateTop10ArtistTempo();
+		//System.out.println("YO");
+		//mb.generateTop10SongsAntall();
+		//	mb.generateSongAntallBestPlass();
+		//System.out.println("3");
+		//mb.generateTop10ArtistEnergy();
+		//System.out.println("4");
+		//mb.generateTop10ArtistTimesignature();
+		//System.out.println("5");
+		//mb.generateTop10ArtistMode();
+		//System.out.println("6");
+		//mb.generateTop10ArtistDuration();
+		//System.out.println("7");
+		//
+		//mb.generateTop10SongsAntallListet();
+		//System.out.println("8");
+		//System.out.println("9");
+		//System.out.println("10");
+		//mb.generateTop10SongsTempo();
+		//System.out.println("11");
+		//mb.generateTop10SongsEnergy();
+		//System.out.println("12");
+		//mb.generateTop10SongsTimesignature();
+		//System.out.println("13");
+		//mb.generateTop10SongsMode();
+		//System.out.println("14");
+		//mb.generateTop10SongsDuration();
+		//System.out.println("15");
+
+		//mb.stopWordForSummaryArtist();
+		//mb.stopWordForSummaryArtist();
 
 		//		
 		//    	SearchSong sse = new SearchSong();

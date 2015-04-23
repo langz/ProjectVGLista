@@ -1,6 +1,8 @@
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import com.echonest.api.v4.EchoNestException;
@@ -28,9 +30,26 @@ public class MongoDB {
 	public DBCollection summaryArtist;
 	public DBCollection summaryArtistTopUnik;
 	public DBCollection summaryArtistTopAntall;
+	public DBCollection summaryArtistTopDuration;
+	public DBCollection summaryArtistTopLoudness;
+	public DBCollection summaryArtistTopDanceability;
+	public DBCollection summaryArtistTopMode;
+	public DBCollection summaryArtistTopTempo;
+	public DBCollection summaryArtistTopEnergy;
+	public DBCollection summaryArtistTopTimesignature;
+	public DBCollection summarySongTopUnik;
+	public DBCollection summarySongTopAntall;
+	public DBCollection summarySongTopTempo;
+	public DBCollection summarySongTopDuration;
+	public DBCollection summarySongTopDanceability;
+	public DBCollection summarySongTopLoudness;
+	public DBCollection summarySongTopMode;
+	public DBCollection summarySongTopEnergy;
+	public DBCollection summarySongTopTimesignature;
 	public DBCollection summaryYear;
 	public DBCollection summaryDecade;
 	public DBCollection summary;
+	public HashSet<String> m_Words;
 	public MongoDB(){
 		try {
 			mongo = new Mongo("localhost", 27017);
@@ -45,6 +64,23 @@ public class MongoDB {
 		summaryArtist = db.getCollection("summaryArtist");
 		summaryArtistTopUnik = db.getCollection("summaryArtistTopUnik");
 		summaryArtistTopAntall = db.getCollection("summaryArtistTopAntall");
+		summaryArtistTopDuration = db.getCollection("summaryArtistTopDuration");
+		summaryArtistTopLoudness = db.getCollection("summaryArtistTopLoudness");
+		summaryArtistTopMode = db.getCollection("summaryArtistTopMode");
+		summaryArtistTopEnergy = db.getCollection("summaryArtistTopEnergy");
+		summaryArtistTopTimesignature = db.getCollection("summaryArtistTopTimesignature");
+		summaryArtistTopDanceability = db.getCollection("summaryArtistTopDanceability");
+		summaryArtistTopTempo = db.getCollection("summaryArtistTopTempo");
+
+		summarySongTopDanceability = db.getCollection("summarySongTopDanceability");
+		summarySongTopUnik = db.getCollection("summarySongTopUnik");
+		summarySongTopAntall = db.getCollection("summarySongTopAntall");
+		summarySongTopDuration = db.getCollection("summarySongTopDuration");
+		summarySongTopLoudness = db.getCollection("summarySongTopLoudness");
+		summarySongTopMode = db.getCollection("summarySongTopMode");
+		summarySongTopEnergy = db.getCollection("summarySongTopEnergy");
+		summarySongTopTimesignature = db.getCollection("summarySongTopTimesignature");
+		summarySongTopTempo = db.getCollection("summarySongTopTempo");
 		summaryDecade = db.getCollection("summaryDecade");
 		summaryYear = db.getCollection("summaryYear");
 		summary = db.getCollection("summary");
@@ -52,6 +88,8 @@ public class MongoDB {
 
 	public void funkerDette(){
 		for(int i=1960; i<2015; i++){
+			HashMap<String, Long> hitLastingPower = new HashMap<String, Long>();
+			int antallListermedSanger = 0;
 			HashMap<String, Long> lyricSummaryMap = new HashMap<String, Long>();
 			JSONArray lyricSummaryArray = new JSONArray();
 			JSONArray jsonKeyArray = new JSONArray();
@@ -71,6 +109,20 @@ public class MongoDB {
 				DBObject temp = cursorDoc.next();
 				int tempint = Integer.parseInt(temp.get("year").toString());
 				if(tempint==i){
+
+					antallListermedSanger++;
+
+					BasicDBList sanger = (BasicDBList) temp.get("list");
+					for(int a=0;a<sanger.size();a++){
+						BasicDBObject sang =  (BasicDBObject) sanger.get(a);
+						if(hitLastingPower.containsKey(sang.get("title").toString()+sang.get("artist").toString())){
+							hitLastingPower.put(sang.get("title").toString()+sang.get("artist").toString(), 
+									hitLastingPower.get(sang.get("title").toString()+sang.get("artist").toString())+1);
+						}
+						else{
+							hitLastingPower.put(sang.get("title").toString()+sang.get("artist").toString(),(long) 1);
+						}
+					}
 
 
 					BasicDBList dbc = (BasicDBList) temp.get("soundSummary");
@@ -142,6 +194,14 @@ public class MongoDB {
 			document.put("loudness", loudness);
 			document.put("mode", mode);
 			document.put("tempo", tempo);
+			Long totalHitLasting = (long) 0;
+			for (Map.Entry<String, Long> s : hitLastingPower.entrySet()) {
+				totalHitLasting += s.getValue();
+			}
+
+
+			document.put("hitlasting", totalHitLasting/hitLastingPower.size());
+			System.out.println(totalHitLasting + " / " + hitLastingPower.size());
 
 			for (Map.Entry<String, Long> entry : lyricSummaryMap.entrySet()) {
 				String ord = entry.getKey();
@@ -182,25 +242,28 @@ public class MongoDB {
 			double loudness =  0.0f;
 			double mode = 0;
 			double tempo =  0.0f;
+			int timesignature =  0;
 			int years = 0;
 			int songs = 0;
 			int charts = 0;
 			int max =10;
+			Long hitlasting = (long) 0;
 			if(dec==2010){
 				max =5;
 			}
 			for(int year=0 ; year <max ; year++){
 				int actualyear = dec +year;
 				DBObject chart = findChartSummaryYear(actualyear);
-
 				danceability += Double.parseDouble(chart.get("danceability").toString());
 				duration +=Double.parseDouble(chart.get("duration").toString());
 				energy +=Double.parseDouble(chart.get("energy").toString());
 				loudness +=Double.parseDouble(chart.get("loudness").toString());
 				mode +=Double.parseDouble(chart.get("mode").toString());
 				tempo +=Double.parseDouble(chart.get("tempo").toString());
+				timesignature +=Integer.parseInt(chart.get("timesignature").toString());
 				songs +=Integer.parseInt(chart.get("songs").toString());
 				charts +=Integer.parseInt(chart.get("charts").toString());
+				hitlasting +=Long.parseLong(chart.get("charts").toString());
 				BasicDBList lyricSummary = (BasicDBList) chart.get("lyricSummary");
 
 				for(int iter = 0 ; iter < lyricSummary.size() ; iter++ ){
@@ -234,8 +297,10 @@ public class MongoDB {
 			duration =  duration/years;
 			energy =  energy/years;
 			loudness =  loudness/years;
+			timesignature =  timesignature/years;
 			mode = mode/years;
 			tempo =  tempo/years;
+			hitlasting =  hitlasting/years;
 			BasicDBObject document = new BasicDBObject();
 			document.put("year",dec);
 			document.put("songs",songs);
@@ -247,6 +312,8 @@ public class MongoDB {
 			document.put("loudness", loudness);
 			document.put("mode", mode);
 			document.put("tempo", tempo);
+			document.put("timesignature", timesignature);
+			document.put("hitlasting", hitlasting);
 
 			for (Map.Entry<String, Long> entry : lyricSummaryMap.entrySet()) {
 				String ord = entry.getKey();
@@ -273,6 +340,96 @@ public class MongoDB {
 			summaryDecade.insert(document);
 
 		}
+		System.out.println("ferdig");
+	}
+	public void updateCharts(){
+		DBCursor cursor = charts.find();
+		while(cursor.hasNext()) {
+
+			DBObject chart = cursor.next();
+			int antall = 0;
+			int timeTotal = 0;
+			BasicDBList listen = (BasicDBList) chart.get("list");
+			for(int ai = 0 ; ai<listen.size(); ai++){
+				BasicDBObject sang = (BasicDBObject) listen.get(ai);
+				String title = (String)sang.get("title");
+				String artist = (String)sang.get("artist");
+				BasicDBObject andQuery = new BasicDBObject();
+				List<BasicDBObject> obj = new ArrayList<BasicDBObject>();
+				obj.add(new BasicDBObject("title", title));
+				obj.add(new BasicDBObject("artist", artist));
+				andQuery.put("$and", obj);
+			 
+				DBCursor cursor2 = songs.find(andQuery);
+				while (cursor2.hasNext()) {
+					DBObject sangen = cursor2.next();
+					BasicDBList soundSummary = (BasicDBList) sangen.get("soundSummary");
+					if(soundSummary.size() == 0){
+						
+					}
+					else{
+						
+						DBObject timesig = (DBObject)soundSummary.get(7);
+						int timesignature = (int) timesig.get("timesignature");
+						antall ++;
+						timeTotal+=timesignature;
+					}
+				}
+				
+			}
+			System.out.println("Delt på " + antall);
+			BasicDBList ss = (BasicDBList) chart.get("soundSummary");
+			BasicDBObject timesign = new BasicDBObject();
+			timesign.put("timesignature", timeTotal/antall);
+			ss.add(timesign);
+			System.out.println(ss);
+			chart.put("soundSummary", ss);
+			
+		
+			charts.save(chart);
+		}
+		System.out.println("ferdig");
+		
+	}
+	public void updateChartsYear(){
+		DBCursor cursor = summaryYear.find();
+		while(cursor.hasNext()) {
+
+			DBObject chart = cursor.next();
+			int antall = 0;
+			int timeTotal = 0;
+			int aaar = (int) chart.get("year");
+			BasicDBObject whereQuery = new BasicDBObject();
+			whereQuery.put("year", ""+ aaar+ "");
+			DBCursor cursor2 = charts.find(whereQuery);
+			while(cursor2.hasNext()) {
+			    DBObject charten = cursor2.next();
+			    
+				BasicDBList soundSummary = (BasicDBList) charten.get("soundSummary");
+				if(soundSummary.size() == 0){
+					
+				}
+				else{
+					DBObject timesig = (DBObject)soundSummary.get(7);
+					int timesignature = (int) timesig.get("timesignature");
+					antall ++;
+					timeTotal+=timesignature;
+				}
+
+			}
+			 
+				
+			
+		
+	
+
+			chart.put("timesignature", timeTotal/antall);
+			
+		
+			summaryYear.save(chart);
+		}
+		System.out.println("ferdig");
+		
 	}
 	public void generateTotal(){
 
@@ -288,6 +445,7 @@ public class MongoDB {
 		double tempo =  0.0f;
 		int decades = 0;
 		int songs = 0;
+		int songsUnique=0; 
 		int antallaar = 0;
 		int charts = 0;
 
@@ -297,6 +455,7 @@ public class MongoDB {
 
 			DBObject dec = cursor.next();
 
+
 			decades++;
 			danceability += Double.parseDouble(dec.get("danceability").toString());
 			duration +=Double.parseDouble(dec.get("duration").toString());
@@ -305,6 +464,7 @@ public class MongoDB {
 			mode +=Double.parseDouble(dec.get("mode").toString());
 			tempo +=Double.parseDouble(dec.get("tempo").toString());
 			songs +=Integer.parseInt(dec.get("songs").toString());
+			songsUnique +=Integer.parseInt(dec.get("songsUnique").toString());
 			antallaar +=Integer.parseInt(dec.get("antallaar").toString());
 			charts +=Integer.parseInt(dec.get("charts").toString());
 			BasicDBList lyricSummary = (BasicDBList) dec.get("lyricSummary");
@@ -449,39 +609,413 @@ public class MongoDB {
 	}
 
 	public void generateTop10ArtistAntallListet(){
-
 		BasicDBObject orderBy = new BasicDBObject();
 		orderBy.put("antall", -1);
-
 		DBCursor cursor = summaryArtist.find().sort(orderBy);
 		int i = 0;
-		while(cursor.hasNext() && i<10) {
+		while(cursor.hasNext() && i<20) {
 			DBObject obj = cursor.next();
 			summaryArtistTopAntall.insert(obj);
 			System.out.println(obj);
 			i++;	
 		}
-
-
-
 	}
 	public void generateTop10ArtistAntallUnike(){
-
 		BasicDBObject orderBy = new BasicDBObject();
 		orderBy.put("antallunikesanger", -1);
 		DBCursor cursor = summaryArtist.find().sort(orderBy);
 		int i = 0;
-		while(cursor.hasNext() && i<10) {
+		while(cursor.hasNext() && i<20) {
 			DBObject obj = cursor.next();
 			System.out.println(obj);
 			summaryArtistTopUnik.insert(obj);
 			i++;	
 		}
+	}
+	public void generateTop10ArtistDanceability(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("danceability", -1);
+		DBCursor cursor = summaryArtist.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summaryArtistTopDanceability.insert(obj);
+			i++;	
+		}
+	}
+	public void generateTop10ArtistDuration(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("duration", -1);
+		DBCursor cursor = summaryArtist.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summaryArtistTopDuration.insert(obj);
+			i++;	
+		}
+	}
+	public void generateTop10ArtistLoudness(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("loudness", 1);
+		DBCursor cursor = summaryArtist.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summaryArtistTopLoudness.insert(obj);
+			i++;	
+		}
+	}
+	public void generateTop10ArtistMode(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("mode", -1);
+		DBCursor cursor = summaryArtist.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summaryArtistTopMode.insert(obj);
+			i++;	
+		}
+	}
+	public void generateTop10ArtistEnergy(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("energy", -1);
+		DBCursor cursor = summaryArtist.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summaryArtistTopEnergy.insert(obj);
+			i++;	
+		}
+	}
+	public void generateTop10ArtistTempo(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("tempo", -1);
+		DBCursor cursor = summaryArtist.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summaryArtistTopTempo.insert(obj);
+			i++;	
+		}
+	}
+	public void generateTop10ArtistTimesignature(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("timesignature", -1);
+		DBCursor cursor = summaryArtist.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summaryArtistTopTimesignature.insert(obj);
+			i++;	
+		}
+	}
+	//HER STARTER SONGS
+
+	public void generateTop10SongsAntallListet(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("antall", -1);
+		DBCursor cursor = songs.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			summaryArtistTopAntall.insert(obj);
+			System.out.println(obj);
+			i++;	
+		}
+	}
+	public void generateTop10SongsDanceability(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("soundSummary.0.danceability", -1);
+		DBCursor cursor = songs.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summarySongTopDanceability.insert(obj);
+			i++;	
+		}
+	}
+	public void generateTop10SongsDuration(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("soundSummary.1.duration", -1);
+		DBCursor cursor = songs.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summarySongTopDuration.insert(obj);
+			i++;	
+		}
+	}
+	public void generateTop10SongsLoudness(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("soundSummary.4.loudness", 1);
+		DBCursor cursor = songs.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			BasicDBList lol = (BasicDBList) obj.get("soundSummary");
+			if(lol.size()!=0){
+		summarySongTopLoudness.insert(obj);
+
+			i++;	
+			}
+		}
+	}
+	public void generateTop10SongsMode(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("soundSummary.5.mode", -1);
+		DBCursor cursor = songs.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summarySongTopMode.insert(obj);
+			i++;	
+		}
+	}
+	public void generateTop10SongsEnergy(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("soundSummary.2.energy", -1);
+		DBCursor cursor = songs.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summarySongTopEnergy.insert(obj);
+			i++;	
+		}
+	}
+	public void generateTop10SongsTempo(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("soundSummary.6.tempo", -1);
+		DBCursor cursor = songs.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summarySongTopTempo.insert(obj);
+			i++;	
+		}
+	}
+	public void generateTop10SongsAntall(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("antall", -1);
+		DBCursor cursor = songs.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summarySongTopAntall.insert(obj);
+			i++;	
+		}
+	}
+	public void generateTop10SongsTimesignature(){
+		BasicDBObject orderBy = new BasicDBObject();
+		orderBy.put("soundSummary.7.timesignature", -1);
+		DBCursor cursor = songs.find().sort(orderBy);
+		int i = 0;
+		while(cursor.hasNext() && i<20) {
+			DBObject obj = cursor.next();
+			System.out.println(obj);
+			summarySongTopTimesignature.insert(obj);
+			i++;	
+		}
+	}
+	public void generateSongAntallBestPlass(){
+		DBCursor cursor = songs.find();
+		int match = 0;
+		int teller = 0;
+		while(cursor.hasNext()) {
+			teller ++;
+			DBObject obj = cursor.next();
+
+			String artistnavn = (String) obj.get("artist");
+			String sangnavn = (String) obj.get("title");
+			BasicDBObject mainQ = new BasicDBObject();
+			BasicDBObject andQuery = new BasicDBObject();
+			BasicDBObject whereQ = new BasicDBObject();
+
+			whereQ.put("artist", artistnavn);
+			whereQ.put("title", sangnavn);
+
+			andQuery.put("$elemMatch", whereQ);
+
+			mainQ.put("list", andQuery);
+
+			int antallListet = 0;
+			int bestpos = 20;
+			DBCursor cursor2 = charts.find(mainQ);
+			antallListet = cursor2.size();
+BasicDBList yearsListed = new BasicDBList();
+HashSet<String> years = new HashSet<>();
+			while(cursor2.hasNext()) {
+				
+
+				
+				DBObject obj2 = cursor2.next();
+				
+				String aartext = (String) obj2.get("year");
+				years.add(aartext);
+				
+				
+				BasicDBList list = (BasicDBList) obj2.get("list");
 
 
+				for(int o = 0 ; o < list.size() ; o++){
+					BasicDBObject obj3 = (BasicDBObject) list.get(o);
+					int currPos = (int) obj3.get("position");
+					if(obj3.get("artist").equals(artistnavn) && obj3.get("title").equals(sangnavn) && currPos < bestpos){
+						bestpos = currPos;
 
+					}
+				}
+
+			}
+			
+			for (String s : years) {
+				yearsListed.add(s);
+			}
+			obj.put("years", yearsListed);
+			obj.put("antall",antallListet );
+			obj.put("bestPos", bestpos);
+			BasicDBList bow = (BasicDBList) obj.get("bow");	
+			BasicDBList newBow = new BasicDBList();
+			if(bow.size()!=0){
+				int lengden = bow.size();
+				int hits = 0;
+				for(int a = 0 ; a < lengden ; a ++){
+
+					BasicDBList bowElem = (BasicDBList) bow.get(a);
+
+					String ord = (String) bowElem.get(0);
+					int verdi = (int) bowElem.get(1);
+					String trimLow = ord.trim().toLowerCase();
+
+					if(Stopwords.isStopword(trimLow)){
+						System.out.println("stoppord");
+						hits++;
+					}
+					else{
+						BasicDBList bowElemIns = new BasicDBList();
+						int bowElemInsVerdi = verdi;
+
+						for(int as = 0 ; as < lengden ; as ++){
+
+							BasicDBList bowElemNew = (BasicDBList) bow.get(as);
+
+							String ordNew = (String) bowElemNew.get(0);
+							int verdiNew = (int) bowElemNew.get(1);
+							String trimLowNew = ordNew.trim().toLowerCase();
+							if(trimLow.equals(trimLowNew) && as!=a){
+								verdi+=verdiNew;
+								System.out.println(bow);
+								bow.remove(as);
+								System.out.println(bow);
+								lengden = lengden -1;
+								hits++;
+								System.out.println("har hitt på: " + trimLow + "=" + trimLowNew);
+							}
+
+						}
+						bowElemIns.add(trimLow);
+						bowElemIns.add(verdi);
+						newBow.add(bowElemIns);
+
+
+					}
+
+				}
+	
+
+			}
+			obj.put("bow", newBow);
+	
+			//		try {
+			//		    Thread.sleep(1500);                 //1000 milliseconds is one second.
+			//		} catch(InterruptedException ex) {
+			//		    Thread.currentThread().interrupt();
+			//		}
+		songs.save(obj);;
+			
+		}
+		System.out.println("Ferdi");
 	}
 
+	public void stopWordForSummaryArtist(){
+		int match = 0;
+		int tell = 0;
+		DBCursor cursorDoc = summaryArtist.find();
+		while (cursorDoc.hasNext()) {
+			tell++;
+			DBObject obj = cursorDoc.next();
+
+			BasicDBList bow = (BasicDBList) obj.get("bow");	
+
+			if(bow.size()!=0){
+				System.out.println(bow);
+				for(int a = 0 ; a < bow.size() ; a ++){
+					BasicDBList bowElem = (BasicDBList) bow.get(a);
+
+					String ord = (String) bowElem.get(0);
+
+
+					if(Stopwords.isStopword(ord)){
+						match++;
+						System.out.println("match :" + ord);
+						System.out.println(bow.remove(a));;
+
+
+					}
+					else{
+
+					}
+
+				}
+
+			}
+			BasicDBList songsyears = (BasicDBList) obj.get("sanger");
+			HashSet<String> songsyearset = new HashSet<String>();
+			for(int a = 0 ; a < songsyears.size(); a++){
+				DBObject objS = (DBObject) songsyears.get(a);
+				String artistnavn = (String) objS.get("artist");
+				String sangnavn = (String) objS.get("title");
+				BasicDBObject mainQ = new BasicDBObject();
+				BasicDBObject andQuery = new BasicDBObject();
+				BasicDBObject whereQ = new BasicDBObject();
+
+				whereQ.put("artist", artistnavn);
+				whereQ.put("title", sangnavn);
+
+				andQuery.put("$elemMatch", whereQ);
+
+				mainQ.put("list", andQuery);
+
+				DBCursor cursor2 = charts.find(mainQ);
+				while(cursor2.hasNext()){
+					DBObject objektet = cursor2.next();
+					String aaret = (String) objektet.get("year");
+					songsyearset.add(aaret);
+				}
+			}
+			BasicDBList yearsListed = new BasicDBList();
+			for (String s : songsyearset) {
+				yearsListed.add(s);
+			}
+			obj.put("years", yearsListed);
+			System.out.println(tell +"/"+ cursorDoc.size());
+			obj.put("bow", bow);
+			summaryArtist.save(obj);
+		}
+		System.out.println("antall match " + match);
+	}
 	public void generateArtistData(){
 		HashSet<String> artister = new HashSet<>();
 		int i=0;
@@ -526,10 +1060,20 @@ public class MongoDB {
 				String tittelen = (String) sang.get("title");
 				if(unikeSanger.add(tittelen)){
 
+
+					BasicDBObject mainQ = new BasicDBObject();
+					BasicDBObject andQuery = new BasicDBObject();
 					BasicDBObject whereQ = new BasicDBObject();
+
 					whereQ.put("artist", artistnavnet);
 					whereQ.put("title", tittelen);
-					DBCursor numberofSongs = songs.find(whereQuery);
+
+					andQuery.put("$elemMatch", whereQ);
+
+					mainQ.put("list", andQuery);
+
+
+					DBCursor numberofSongs = charts.find(mainQ);
 					int antallganger = numberofSongs.size();
 					antall+= antallganger;
 					sang.put("antall", antallganger);
@@ -678,4 +1222,5 @@ public class MongoDB {
 		}
 		else return mongodb;
 	}
+
 }
